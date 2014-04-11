@@ -1,35 +1,6 @@
 #!/usr/bin/env ruby
 
-require "yaml"
-require "harvested"
-require "active_support/core_ext/date"
-require "active_support/core_ext/time"
+$LOAD_PATH.unshift File.expand_path("../../lib", __FILE__)
+require 'whydoiwork'
 
-config_file_name = "~/.whydoiwork.yml"
-begin
-  config = YAML.load_file(File.expand_path(config_file_name))
-rescue
-  puts "Create the config file: #{config_file_name}"
-  exit 1
-end
-
-harvest = Harvest.client(config["harvest"]["subdomain"], config["harvest"]["username"], config["harvest"]["password"])
-user_id = harvest.account.who_am_i.id
-time_entries = harvest.reports.time_by_user(user_id, Date.today.beginning_of_month, Date.today.end_of_month)
-total_time = time_entries.map(&:hours).inject(0, &:+)
-money = (total_time * config["rate"]).round
-
-config["expenses"].each_pair do |name, cost|
-  if money > cost
-    puts "#{name} (#{cost})… done"
-  elsif money > 0
-    puts "#{name} (#{cost})… earning right now"
-  else
-    puts "#{name} (#{cost})"
-  end
-  money -= cost
-end
-
-if money > 0
-  puts "Free to spend: #{money}"
-end
+Whydoiwork.run
